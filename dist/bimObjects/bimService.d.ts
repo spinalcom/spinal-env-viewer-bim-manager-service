@@ -6,7 +6,10 @@ declare class BimObjectManagerService {
         selection: Array<Number>;
     }>): Promise<any>;
     getLeafDbIds(model: any, rootId?: Number): Array<Number>;
-    getBimObjectsByPropertiesName(model: any, propertieName: string, propertieValue?: string): Promise<any[]>;
+    getBimObjectsByPropertiesName(model: any, properties: Array<{
+        name: string;
+        value: string;
+    }>): Promise<any[]>;
     getBimObjectsByName(model: any, bimObjectName: string, labelName?: string): Promise<any>;
     _getProperties(model: any, selection: Array<Number>): Promise<any>;
     _getAllDbIds(model: any): number[];
@@ -18,7 +21,10 @@ declare class BimObjectManagerService {
             displayName: string;
             displayValue: any;
         }>;
-    }, propertyName: string, propertieValue?: any): any;
+    }, properties: Array<{
+        name: string;
+        value: string;
+    }>): any;
 }
 declare const _default: BimObjectManagerService;
 export default _default;

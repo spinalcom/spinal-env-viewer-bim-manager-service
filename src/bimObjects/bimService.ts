@@ -58,8 +58,10 @@ class BimObjectManagerService {
 
   getBimObjectsByPropertiesName(
     model: any,
-    propertieName: string,
-    propertieValue?: string
+    properties: Array<{
+      name: string;
+      value: string;
+    }>
   ) {
     return this.getAllBimObjectsProperties(model).then(res => {
       let result = [];
@@ -67,15 +69,13 @@ class BimObjectManagerService {
         const element = res[i];
         for (let j = 0; j < element.properties.length; j++) {
           const property = element.properties[j];
-          if (
-            typeof this._getLabel(property, propertieName, propertieValue) !==
-            "undefined"
-          ) {
+          if (typeof this._getLabel(property, properties) !== "undefined") {
             result.push(property);
           }
+          // }
         }
+        return result;
       }
-      return result;
     });
   }
 
@@ -145,17 +145,31 @@ class BimObjectManagerService {
       name: string;
       properties: Array<{ displayName: string; displayValue: any }>;
     },
-    propertyName: string,
-    propertieValue?: any
+    properties: Array<{
+      name: string;
+      value: string;
+    }>
   ): any {
-    return bim.properties.find(el => {
-      return typeof propertieValue === "undefined"
-        ? el.displayName.toLowerCase() ===
-            propertyName.trim().toLocaleLowerCase()
-        : el.displayName.toLowerCase() ===
-            propertyName.trim().toLocaleLowerCase() &&
-            propertieValue == el.displayValue;
-    });
+    for (let i = 0; i < properties.length; i++) {
+      const propertieValue = properties[i].value;
+      const propertyName = properties[i].name;
+
+      const found = bim.properties.find(el => {
+        return typeof propertieValue === "undefined" ||
+          propertieValue.length === 0
+          ? el.displayName.toLowerCase() ===
+              propertyName.trim().toLocaleLowerCase()
+          : el.displayName.toLowerCase() ===
+              propertyName.trim().toLocaleLowerCase() &&
+              propertieValue == el.displayValue;
+      });
+
+      if (typeof found === "undefined") {
+        return undefined;
+      }
+    }
+
+    return true;
   }
 }
 

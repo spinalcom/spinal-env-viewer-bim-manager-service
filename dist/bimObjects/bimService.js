@@ -49,20 +49,20 @@ class BimObjectManagerService {
         }
         return dbIds;
     }
-    getBimObjectsByPropertiesName(model, propertieName, propertieValue) {
+    getBimObjectsByPropertiesName(model, properties) {
         return this.getAllBimObjectsProperties(model).then(res => {
             let result = [];
             for (let i = 0; i < res.length; i++) {
                 const element = res[i];
                 for (let j = 0; j < element.properties.length; j++) {
                     const property = element.properties[j];
-                    if (typeof this._getLabel(property, propertieName, propertieValue) !==
-                        "undefined") {
+                    if (typeof this._getLabel(property, properties) !== "undefined") {
                         result.push(property);
                     }
+                    // }
                 }
+                return result;
             }
-            return result;
         });
     }
     getBimObjectsByName(model, bimObjectName, labelName) {
@@ -105,15 +105,24 @@ class BimObjectManagerService {
             return parseInt(id);
         });
     }
-    _getLabel(bim, propertyName, propertieValue) {
-        return bim.properties.find(el => {
-            return typeof propertieValue === "undefined"
-                ? el.displayName.toLowerCase() ===
-                    propertyName.trim().toLocaleLowerCase()
-                : el.displayName.toLowerCase() ===
-                    propertyName.trim().toLocaleLowerCase() &&
-                    propertieValue == el.displayValue;
-        });
+    _getLabel(bim, properties) {
+        for (let i = 0; i < properties.length; i++) {
+            const propertieValue = properties[i].value;
+            const propertyName = properties[i].name;
+            const found = bim.properties.find(el => {
+                return typeof propertieValue === "undefined" ||
+                    propertieValue.length === 0
+                    ? el.displayName.toLowerCase() ===
+                        propertyName.trim().toLocaleLowerCase()
+                    : el.displayName.toLowerCase() ===
+                        propertyName.trim().toLocaleLowerCase() &&
+                        propertieValue == el.displayValue;
+            });
+            if (typeof found === "undefined") {
+                return undefined;
+            }
+        }
+        return true;
     }
 }
 exports.default = new BimObjectManagerService();
