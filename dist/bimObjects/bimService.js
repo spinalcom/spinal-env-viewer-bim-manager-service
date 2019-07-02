@@ -14,7 +14,7 @@ class BimObjectManagerService {
         return this.getBimObjectProperties([
             {
                 model: model,
-                selection: this.getLeafDbIds(model)
+                selection: this.getLeafDbIds(model).selection
             }
         ]);
     }
@@ -32,22 +32,29 @@ class BimObjectManagerService {
     }
     getLeafDbIds(model, rootId) {
         const tree = model.getInstanceTree();
-        rootId = typeof rootId === "undefined" ? tree.nodeAccess.rootId : rootId;
-        const queue = [rootId];
         const dbIds = [];
-        let hasChildren;
-        while (queue.length) {
-            let id = queue.pop();
-            hasChildren = false;
-            tree.enumNodeChildren(id, childId => {
-                hasChildren = true;
-                queue.push(childId);
-            });
-            if (!hasChildren) {
-                dbIds.push(id);
-            }
+        if (typeof rootId === "undefined") {
+            rootId = [tree.nodeAccess.rootId];
         }
-        return dbIds;
+        else {
+            rootId = Array.isArray(rootId) ? rootId : [rootId];
+        }
+        rootId.forEach(el => {
+            const queue = [el];
+            let hasChildren;
+            while (queue.length) {
+                let id = queue.pop();
+                hasChildren = false;
+                tree.enumNodeChildren(id, childId => {
+                    hasChildren = true;
+                    queue.push(childId);
+                });
+                if (!hasChildren) {
+                    dbIds.push(id);
+                }
+            }
+        });
+        return { model: model, selection: dbIds };
     }
     getBimObjectsByPropertiesName(model, properties) {
         return this.getAllBimObjectsProperties(model).then(res => {
@@ -63,6 +70,18 @@ class BimObjectManagerService {
                 }
                 return result;
             }
+        });
+    }
+    getBimObjectsValidated(referential, regEx) {
+        return this.getBimObjectProperties(referential).then(res => {
+            return res.map(element => {
+                return {
+                    model: element.model,
+                    properties: element.properties.filter(el => {
+                        return this._isValid(el, regEx);
+                    })
+                };
+            });
         });
     }
     getBimObjectsByName(model, bimObjectName, labelName) {
@@ -93,7 +112,7 @@ class BimObjectManagerService {
                 });
             });
             return {
-                model: model.id,
+                model: model,
                 properties: yield Promise.all(properties)
             };
         });
@@ -120,6 +139,22 @@ class BimObjectManagerService {
             });
             if (typeof found === "undefined") {
                 return undefined;
+            }
+        }
+        return true;
+    }
+    _isValid(el, regEx) {
+        for (let i = 0; i < regEx.length; i++) {
+            let nameRegex = regEx[i].nameRegex;
+            let valueRegex = regEx[i].valueRegex;
+            let found = el.properties.find(res => {
+                if (typeof valueRegex === "undefined") {
+                    return nameRegex.test(res.displayName);
+                }
+                return (nameRegex.test(res.displayName) && valueRegex.test(res.displayValue));
+            });
+            if (typeof found === "undefined") {
+                return false;
             }
         }
         return true;
